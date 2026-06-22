@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "commitment-tracker-v2";
+const CACHE_NAME = "commitment-tracker-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_SHELL = [
   "./manifest.json",
   "./offline.html",
   "./icons/icon.svg",
+  "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
