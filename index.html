@@ -29,7 +29,7 @@
         <div class="auth-card glass">
           <div class="brand-mark">CT</div>
           <h2>Monthly money, less stress</h2>
-          <p class="muted">Track salary, commitments, savings, balance. Login once on this device, then app stays with you.</p>
+          <p class="muted">Track salary, bills, savings, balance. Login once on this device, then app stays with you.</p>
 
           <div class="auth-tabs">
             <button class="tab-button active" data-auth-tab="login" type="button">Login</button>
@@ -77,7 +77,7 @@
               <strong id="metric-salary">RM0</strong>
             </article>
             <button id="dashboard-commitments-trigger" class="metric-card metric-button" type="button">
-              <span>Commitments</span>
+              <span>Bills</span>
               <strong id="metric-commitments">RM0</strong>
               <small class="metric-hint">Tap to update</small>
             </button>
@@ -112,7 +112,7 @@
             </div>
             <div class="snapshot-grid">
               <span>Salary <strong id="snapshot-salary">RM0</strong></span>
-              <span>Commitments <strong id="snapshot-commitments">RM0</strong></span>
+              <span>Bills <strong id="snapshot-commitments">RM0</strong></span>
               <span>Savings <strong id="snapshot-savings">RM0</strong></span>
               <span>Balance <strong id="snapshot-balance">RM0</strong></span>
             </div>
@@ -124,14 +124,14 @@
         <section id="commitments-page" class="page" data-page="commitments">
           <div class="section-head">
             <div>
-              <h2>Commitments</h2>
-              <p class="muted">Recurring monthly commitments only.</p>
+              <h2>Bills</h2>
+              <p class="muted">Recurring monthly bills only.</p>
             </div>
             <button class="primary-button compact" data-open-modal="commitment-modal" type="button">Add</button>
           </div>
 
           <div class="toolbar">
-            <input id="commitment-search" type="search" placeholder="Search commitments">
+            <input id="commitment-search" type="search" placeholder="Search bills">
             <select id="commitment-sort">
               <option value="due_date">Due date</option>
               <option value="amount_desc">Amount high</option>
@@ -241,7 +241,7 @@
 
     <nav id="bottom-nav" class="bottom-nav hidden">
       <button class="nav-item active" data-page-target="dashboard" type="button">Dashboard</button>
-      <button class="nav-item" data-page-target="commitments" type="button">Commitments</button>
+      <button class="nav-item" data-page-target="commitments" type="button">Bills</button>
       <button class="nav-item" data-page-target="savings" type="button">Savings</button>
       <button class="nav-item" data-page-target="progress" type="button">Progress</button>
       <button class="nav-item" data-page-target="settings" type="button">Settings</button>
@@ -252,7 +252,7 @@
     <dialog id="commitment-modal" class="app-modal">
       <form id="commitment-form" method="dialog" class="modal-card">
         <div class="section-head compact-head">
-          <h3 id="commitment-modal-title">Add Commitment</h3>
+          <h3 id="commitment-modal-title">Add Bill</h3>
           <button class="icon-button" data-close-modal type="button">&times;</button>
         </div>
         <input type="hidden" id="commitment-id">
@@ -260,17 +260,17 @@
         <label>Amount<input id="commitment-amount" type="number" min="0" step="0.01" required></label>
         <label>Due Date<input id="commitment-due-date" type="number" min="1" max="31" required></label>
         <label>Notes<textarea id="commitment-notes" rows="3"></textarea></label>
-        <button class="primary-button" type="submit">Save commitment</button>
+        <button class="primary-button" type="submit">Save bill</button>
       </form>
     </dialog>
 
     <dialog id="dashboard-commitments-modal" class="app-modal">
       <div class="modal-card">
         <div class="section-head compact-head">
-          <h3>This Month Commitments</h3>
+          <h3>This Month Bills</h3>
           <button class="icon-button" data-close-modal type="button">&times;</button>
         </div>
-        <p class="muted">Tap commitment card, then update paid status.</p>
+        <p class="muted">Tap bill card, then update paid status.</p>
         <div id="dashboard-commitments-list" class="card-list compact-list"></div>
       </div>
     </dialog>
@@ -278,7 +278,7 @@
     <dialog id="dashboard-commitment-modal" class="app-modal">
       <div class="modal-card">
         <div class="section-head compact-head">
-          <h3 id="dashboard-commitment-title">Commitment</h3>
+          <h3 id="dashboard-commitment-title">Bill</h3>
           <button class="icon-button" data-close-modal type="button">&times;</button>
         </div>
         <div class="split-metrics single-column">

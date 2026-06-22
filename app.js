@@ -66,7 +66,8 @@ function setPage(page) {
   state.page = page;
   document.querySelectorAll(".page").forEach((node) => node.classList.toggle("active", node.dataset.page === page));
   document.querySelectorAll(".nav-item").forEach((node) => node.classList.toggle("active", node.dataset.pageTarget === page));
-  nodes.pageTitle.textContent = page.charAt(0).toUpperCase() + page.slice(1);
+  const pageTitles = { dashboard: "Dashboard", commitments: "Bills", savings: "Savings", progress: "Progress", settings: "Settings" };
+  nodes.pageTitle.textContent = pageTitles[page] || (page.charAt(0).toUpperCase() + page.slice(1));
   if (page !== "savings") lockVault();
 }
 
@@ -76,7 +77,7 @@ function todayMonthMetrics() {
     state.payments.filter((item) => item.month === currentMonth()).map((item) => [item.commitment_id, item.is_paid])
   );
   const salary = Number(state.profile?.monthly_salary || 0);
-  const totalCommitments = state.commitments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalBills = state.commitments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalSavings = publicGoals.reduce((sum, item) => sum + Number(item.current_amount || 0), 0);
   const paidItems = state.commitments.filter((item) => paidMap.get(item.id));
   const paidTotal = paidItems.reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -84,13 +85,13 @@ function todayMonthMetrics() {
 
   return {
     salary,
-    totalCommitments,
+    totalBills,
     totalSavings,
-    balance: salary - totalCommitments - totalSavings,
+    balance: salary - totalBills - totalSavings,
     paidCount: paidItems.length,
     unpaidCount,
     paidTotal,
-    unpaidTotal: totalCommitments - paidTotal
+    unpaidTotal: totalBills - paidTotal
   };
 }
 
@@ -163,14 +164,14 @@ function renderDashboard() {
   document.getElementById("dashboard-month-label").textContent = monthLabel(month);
   document.getElementById("next-salary-date").textContent = nextSalaryDate();
   document.getElementById("metric-salary").textContent = money(metrics.salary);
-  document.getElementById("metric-commitments").textContent = money(metrics.totalCommitments);
+  document.getElementById("metric-commitments").textContent = money(metrics.totalBills);
   document.getElementById("metric-savings").textContent = money(metrics.totalSavings);
   document.getElementById("metric-balance").textContent = money(metrics.balance);
   document.getElementById("paid-count").textContent = metrics.paidCount;
   document.getElementById("unpaid-count").textContent = metrics.unpaidCount;
   document.getElementById("snapshot-month-title").textContent = monthLabel(month);
   document.getElementById("snapshot-salary").textContent = money(metrics.salary);
-  document.getElementById("snapshot-commitments").textContent = money(metrics.totalCommitments);
+  document.getElementById("snapshot-commitments").textContent = money(metrics.totalBills);
   document.getElementById("snapshot-savings").textContent = money(metrics.totalSavings);
   document.getElementById("snapshot-balance").textContent = money(metrics.balance);
 
@@ -195,10 +196,10 @@ function renderDashboard() {
           </button>
         `;
       }).join("")
-    : `<article class="card-item"><p class="muted">No commitments yet.</p></article>`;
+    : `<article class="card-item"><p class="muted">No bills yet.</p></article>`;
 }
 
-function renderCommitments() {
+function renderBills() {
   const search = document.getElementById("commitment-search").value.trim().toLowerCase();
   const sort = document.getElementById("commitment-sort").value;
   const paidMap = new Map(
@@ -244,7 +245,7 @@ function renderCommitments() {
           </article>
         `;
       }).join("")
-    : `<article class="card-item"><p class="muted">No commitments yet.</p></article>`;
+    : `<article class="card-item"><p class="muted">No bills yet.</p></article>`;
 }
 
 function renderSavings() {
@@ -324,12 +325,12 @@ function renderProgress() {
             <div class="snapshot-details hidden" id="snapshot-${item.id}">
               <div class="split-metrics">
                 <div><span class="muted">Salary</span><strong>${money(item.salary)}</strong></div>
-                <div><span class="muted">Commitments</span><strong>${money(item.total_commitments)}</strong></div>
+                <div><span class="muted">Bills</span><strong>${money(item.total_commitments)}</strong></div>
                 <div><span class="muted">Savings</span><strong>${money(item.total_savings)}</strong></div>
               </div>
               <div class="subtle-divider"></div>
               <div class="history-list">
-                <strong>Commitment Breakdown</strong>
+                <strong>Bills Breakdown</strong>
                 ${expandedBreakdown || `<span class="muted">No items</span>`}
               </div>
               <div class="history-list">
@@ -363,7 +364,7 @@ function renderSettings() {
 function renderAll() {
   applyTheme();
   renderDashboard();
-  renderCommitments();
+  renderBills();
   renderSavings();
   renderProgress();
   renderSettings();
@@ -425,7 +426,7 @@ async function syncSnapshot() {
     user_id: state.user.id,
     month: currentMonth(),
     salary: metrics.salary,
-    total_commitments: metrics.totalCommitments,
+    total_commitments: metrics.totalBills,
     total_savings: metrics.totalSavings,
     balance: metrics.balance,
     commitment_breakdown: state.commitments.map((item) => ({
@@ -496,7 +497,7 @@ async function updatePassword(nextPassword) {
   if (error) throw error;
 }
 
-async function saveCommitment(event) {
+async function saveBill(event) {
   event.preventDefault();
   const id = document.getElementById("commitment-id").value;
   const payload = {
@@ -513,7 +514,7 @@ async function saveCommitment(event) {
 
   closeModal("commitment-modal");
   event.target.reset();
-  await refreshApp("Commitment saved");
+  await refreshApp("Bill saved");
 }
 
 async function saveGoal(event) {
@@ -575,7 +576,7 @@ async function refreshApp(message) {
   if (message) showToast(message);
 }
 
-async function toggleCommitmentPaid(id) {
+async function toggleBillPaid(id) {
   const found = state.payments.find((item) => item.commitment_id === id && item.month === currentMonth());
   const payload = {
     user_id: state.user.id,
@@ -589,8 +590,8 @@ async function toggleCommitmentPaid(id) {
   await refreshApp("Payment status updated");
 }
 
-function fillCommitmentForm(item) {
-  document.getElementById("commitment-modal-title").textContent = item ? "Edit Commitment" : "Add Commitment";
+function fillBillForm(item) {
+  document.getElementById("commitment-modal-title").textContent = item ? "Edit Bill" : "Add Bill";
   document.getElementById("commitment-id").value = item?.id || "";
   document.getElementById("commitment-name").value = item?.name || "";
   document.getElementById("commitment-amount").value = item?.amount || "";
@@ -618,7 +619,7 @@ function fillTransactionForm(goalId, type) {
   openModal("transaction-modal");
 }
 
-function fillDashboardCommitmentModal(item) {
+function fillDashboardBillModal(item) {
   const payment = state.payments.find((entry) => entry.commitment_id === item.id && entry.month === currentMonth());
   const isPaid = Boolean(payment?.is_paid);
   document.getElementById("dashboard-commitment-title").textContent = item.name;
@@ -706,13 +707,13 @@ async function handleAction(event) {
   const { action, id } = button.dataset;
 
   try {
-    if (action === "toggle-commitment") await toggleCommitmentPaid(id);
+    if (action === "toggle-commitment") await toggleBillPaid(id);
     if (action === "open-dashboard-commitment") {
-      fillDashboardCommitmentModal(state.commitments.find((item) => item.id === id));
+      fillDashboardBillModal(state.commitments.find((item) => item.id === id));
       closeModal("dashboard-commitments-modal");
     }
-    if (action === "edit-commitment") fillCommitmentForm(state.commitments.find((item) => item.id === id));
-    if (action === "delete-commitment") await deleteRow("commitments", id, "Commitment");
+    if (action === "edit-commitment") fillBillForm(state.commitments.find((item) => item.id === id));
+    if (action === "delete-commitment") await deleteRow("commitments", id, "Bill");
     if (action === "edit-goal") fillGoalForm(state.goals.find((item) => item.id === id));
     if (action === "delete-goal") await deleteRow("savings_goals", id, "Goal");
     if (action === "deposit-goal") fillTransactionForm(id, "deposit");
@@ -833,13 +834,13 @@ function setupEvents() {
   document.getElementById("dashboard-commitments-trigger").addEventListener("click", () => openModal("dashboard-commitments-modal"));
   document.getElementById("dashboard-commitment-toggle").addEventListener("click", async (event) => {
     try {
-      await toggleCommitmentPaid(event.currentTarget.dataset.id);
+      await toggleBillPaid(event.currentTarget.dataset.id);
       closeModal("dashboard-commitment-modal");
     } catch (error) {
       showToast(error.message);
     }
   });
-  document.getElementById("commitment-form").addEventListener("submit", (event) => saveCommitment(event).catch((error) => showToast(error.message)));
+  document.getElementById("commitment-form").addEventListener("submit", (event) => saveBill(event).catch((error) => showToast(error.message)));
   document.getElementById("goal-form").addEventListener("submit", (event) => saveGoal(event).catch((error) => showToast(error.message)));
   document.getElementById("transaction-form").addEventListener("submit", (event) => saveTransaction(event).catch((error) => showToast(error.message)));
   document.getElementById("settings-form").addEventListener("submit", async (event) => {
@@ -864,12 +865,12 @@ function setupEvents() {
 
   document.querySelectorAll("[data-open-modal]").forEach((button) => button.addEventListener("click", () => {
     if (button.dataset.openModal === "goal-modal") fillGoalForm(null, false);
-    else fillCommitmentForm(null);
+    else fillBillForm(null);
   }));
   document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
 
-  document.getElementById("commitment-search").addEventListener("input", renderCommitments);
-  document.getElementById("commitment-sort").addEventListener("change", renderCommitments);
+  document.getElementById("commitment-search").addEventListener("input", renderBills);
+  document.getElementById("commitment-sort").addEventListener("change", renderBills);
   document.addEventListener("click", handleAction);
 
   document.getElementById("logout-button").addEventListener("click", async () => {
