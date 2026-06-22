@@ -144,12 +144,21 @@ h1, h2, h3, p { margin: 0; }
 
 .bottom-nav {
   position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%);
-  width: min(760px, calc(100% - 18px)); padding: 10px; border-radius: 24px;
+  width: min(760px, calc(100% - 14px)); padding: 8px; border-radius: 20px;
   background: rgba(9, 16, 22, 0.88); border: 1px solid var(--line); box-shadow: var(--shadow);
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; backdrop-filter: blur(16px);
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; backdrop-filter: blur(16px);
 }
 body.light .bottom-nav { background: rgba(255, 255, 255, 0.88); }
-.nav-item { background: transparent; color: var(--muted); font-size: 0.82rem; }
+.nav-item {
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.15;
+  min-width: 0;
+  padding: 12px 8px;
+  white-space: normal;
+  text-wrap: balance;
+}
 
 .app-modal { border: 0; padding: 0; background: transparent; width: min(92vw, 420px); }
 .app-modal::backdrop { background: rgba(0, 0, 0, 0.5); }
@@ -176,6 +185,6 @@ canvas { width: 100%; background: transparent; }
 
 @media (min-width: 720px) {
   .app-shell { padding-bottom: 104px; }
-  .bottom-nav { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); width: min(760px, calc(100% - 18px)); margin-top: 0; }
+  .bottom-nav { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); width: min(760px, calc(100% - 14px)); margin-top: 0; }
   .toast { bottom: 94px; }
 }
