@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1720">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Commitment Tracker">
+  <meta name="description" content="Simple monthly commitment and savings companion.">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <title>Commitment Tracker</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Commitment Tracker</p>
+        <h1 id="page-title">Dashboard</h1>
+      </div>
+      <button id="install-button" class="ghost-button hidden" type="button">Install</button>
+    </header>
+
+    <main class="main-content">
+      <section id="auth-view" class="view active">
+        <div class="auth-card glass">
+          <div class="brand-mark">CT</div>
+          <h2>Monthly money, less stress</h2>
+          <p class="muted">Track salary, commitments, savings, balance. Login once on this device, then app stays with you.</p>
+
+          <div class="auth-tabs">
+            <button class="tab-button active" data-auth-tab="login" type="button">Login</button>
+            <button class="tab-button hidden" data-auth-tab="register" type="button">Register</button>
+            <button class="tab-button hidden" data-auth-tab="forgot" type="button">Reset</button>
+          </div>
+
+          <form id="login-form" class="auth-form active">
+            <label>Email<input name="email" type="email" required></label>
+            <label>Password<input name="password" type="password" required></label>
+            <button class="primary-button" type="submit">Login</button>
+          </form>
+
+          <form id="register-form" class="auth-form hidden">
+            <label>Email<input name="email" type="email" required></label>
+            <label>Password<input name="password" type="password" minlength="6" required></label>
+            <button class="primary-button" type="submit">Create account</button>
+          </form>
+
+          <form id="forgot-form" class="auth-form hidden">
+            <label>Email<input name="email" type="email" required></label>
+            <button class="primary-button" type="submit">Send reset link</button>
+          </form>
+
+          <p id="auth-message" class="inline-message"></p>
+        </div>
+      </section>
+
+      <section id="app-view" class="view">
+        <section id="dashboard-page" class="page active" data-page="dashboard">
+          <div class="hero-card glass">
+            <div>
+              <p class="eyebrow">This Month</p>
+              <h2 id="dashboard-month-label">Month</h2>
+            </div>
+            <div class="stat-chip">
+              <span>Next salary</span>
+              <strong id="next-salary-date">-</strong>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card">
+              <span>Salary</span>
+              <strong id="metric-salary">RM0</strong>
+            </article>
+            <button id="dashboard-commitments-trigger" class="metric-card metric-button" type="button">
+              <span>Commitments</span>
+              <strong id="metric-commitments">RM0</strong>
+              <small class="metric-hint">Tap to update</small>
+            </button>
+            <article class="metric-card">
+              <span>Savings</span>
+              <strong id="metric-savings">RM0</strong>
+            </article>
+            <article class="metric-card emphasis">
+              <span>Balance</span>
+              <strong id="metric-balance">RM0</strong>
+            </article>
+          </div>
+
+          <div class="metric-grid small">
+            <article class="mini-card">
+              <span>Paid</span>
+              <strong id="paid-count">0</strong>
+            </article>
+            <article class="mini-card">
+              <span>Unpaid</span>
+              <strong id="unpaid-count">0</strong>
+            </article>
+          </div>
+
+          <button id="snapshot-card" class="snapshot-card glass" type="button">
+            <div class="snapshot-head">
+              <div>
+                <p class="eyebrow">This Month Snapshot</p>
+                <h3 id="snapshot-month-title">Month</h3>
+              </div>
+              <span>Open Progress</span>
+            </div>
+            <div class="snapshot-grid">
+              <span>Salary <strong id="snapshot-salary">RM0</strong></span>
+              <span>Commitments <strong id="snapshot-commitments">RM0</strong></span>
+              <span>Savings <strong id="snapshot-savings">RM0</strong></span>
+              <span>Balance <strong id="snapshot-balance">RM0</strong></span>
+            </div>
+          </button>
+
+
+        </section>
+
+        <section id="commitments-page" class="page" data-page="commitments">
+          <div class="section-head">
+            <div>
+              <h2>Commitments</h2>
+              <p class="muted">Recurring monthly commitments only.</p>
+            </div>
+            <button class="primary-button compact" data-open-modal="commitment-modal" type="button">Add</button>
+          </div>
+
+          <div class="toolbar">
+            <input id="commitment-search" type="search" placeholder="Search commitments">
+            <select id="commitment-sort">
+              <option value="due_date">Due date</option>
+              <option value="amount_desc">Amount high</option>
+              <option value="amount_asc">Amount low</option>
+              <option value="name">Name</option>
+            </select>
+          </div>
+
+          <div class="metric-grid small">
+            <article class="mini-card">
+              <span>Paid Total</span>
+              <strong id="paid-total">RM0</strong>
+            </article>
+            <article class="mini-card">
+              <span>Unpaid Total</span>
+              <strong id="unpaid-total">RM0</strong>
+            </article>
+          </div>
+
+          <div id="commitments-list" class="card-list"></div>
+        </section>
+
+        <section id="savings-page" class="page" data-page="savings">
+          <div class="section-head">
+            <div class="vault-head">
+              <div>
+                <h2>Savings</h2>
+                <p class="muted">Goals, progress, and private vault.</p>
+              </div>
+              <button id="vault-trigger" class="vault-trigger" type="button" aria-label="Open private vault">&#10022;</button>
+            </div>
+            <button class="primary-button compact" data-open-modal="goal-modal" type="button">Add Goal</button>
+          </div>
+
+          <div id="savings-list" class="card-list"></div>
+
+          <div class="section-head vault-section hidden" id="vault-section">
+            <div>
+              <h3>Private Vault</h3>
+              <p class="muted">Hidden savings. Locked when you leave.</p>
+            </div>
+            <div class="row">
+              <button id="vault-add-button" class="primary-button compact" type="button">Add Secret Goal</button>
+              <button id="vault-lock-button" class="ghost-button compact" type="button">Lock</button>
+            </div>
+          </div>
+
+          <div id="vault-list" class="card-list hidden"></div>
+        </section>
+
+        <section id="progress-page" class="page" data-page="progress">
+          <div class="chart-stack">
+            <article class="chart-card glass">
+              <div class="section-head compact-head">
+                <h2>Savings Trend</h2>
+              </div>
+              <canvas id="savings-chart" height="170"></canvas>
+            </article>
+            <article class="chart-card glass">
+              <div class="section-head compact-head">
+                <h2>Balance Trend</h2>
+              </div>
+              <canvas id="balance-chart" height="170"></canvas>
+            </article>
+            <article class="chart-card glass">
+              <div class="section-head compact-head">
+                <h2>Monthly Comparison</h2>
+              </div>
+              <canvas id="comparison-chart" height="190"></canvas>
+            </article>
+          </div>
+          <div id="snapshots-list" class="card-list"></div>
+        </section>
+
+        <section id="settings-page" class="page" data-page="settings">
+          <div class="settings-stack">
+            <form id="settings-form" class="glass settings-card">
+              <h2>Settings</h2>
+              <label>Monthly Salary<input id="monthly-salary" name="monthly_salary" type="number" min="0" step="0.01"></label>
+              <label>Salary Date<input id="salary-date" name="salary_date" type="number" min="1" max="31"></label>
+              <label>Currency<input id="currency" name="currency" type="text" maxlength="10" value="RM"></label>
+              <label>Private Vault PIN<input id="private-pin" name="private_vault_pin" type="password" inputmode="numeric" maxlength="12"></label>
+              <label class="switch-row">
+                <span>Dark Mode</span>
+                <input id="dark-mode" name="dark_mode" type="checkbox">
+              </label>
+              <button class="primary-button" type="submit">Save settings</button>
+            </form>
+
+            <div class="glass settings-card">
+              <h2>Data</h2>
+              <div class="button-stack">
+                <button id="export-button" class="ghost-button" type="button">Export Data</button>
+                <label class="ghost-button file-button">
+                  <span>Import Data</span>
+                  <input id="import-input" type="file" accept="application/json">
+                </label>
+                <button id="backup-button" class="ghost-button" type="button">Backup Data</button>
+                <button id="restore-button" class="ghost-button" type="button">Restore Data</button>
+                <button id="logout-button" class="danger-button hidden" type="button">Logout</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <nav id="bottom-nav" class="bottom-nav hidden">
+      <button class="nav-item active" data-page-target="dashboard" type="button">Dashboard</button>
+      <button class="nav-item" data-page-target="commitments" type="button">Commitments</button>
+      <button class="nav-item" data-page-target="savings" type="button">Savings</button>
+      <button class="nav-item" data-page-target="progress" type="button">Progress</button>
+      <button class="nav-item" data-page-target="settings" type="button">Settings</button>
+    </nav>
+  </div>
+
+  <div id="modal-root">
+    <dialog id="commitment-modal" class="app-modal">
+      <form id="commitment-form" method="dialog" class="modal-card">
+        <div class="section-head compact-head">
+          <h3 id="commitment-modal-title">Add Commitment</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <input type="hidden" id="commitment-id">
+        <label>Name<input id="commitment-name" type="text" required></label>
+        <label>Amount<input id="commitment-amount" type="number" min="0" step="0.01" required></label>
+        <label>Due Date<input id="commitment-due-date" type="number" min="1" max="31" required></label>
+        <label>Notes<textarea id="commitment-notes" rows="3"></textarea></label>
+        <button class="primary-button" type="submit">Save commitment</button>
+      </form>
+    </dialog>
+
+    <dialog id="dashboard-commitments-modal" class="app-modal">
+      <div class="modal-card">
+        <div class="section-head compact-head">
+          <h3>This Month Commitments</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <p class="muted">Tap commitment card, then update paid status.</p>
+        <div id="dashboard-commitments-list" class="card-list compact-list"></div>
+      </div>
+    </dialog>
+
+    <dialog id="dashboard-commitment-modal" class="app-modal">
+      <div class="modal-card">
+        <div class="section-head compact-head">
+          <h3 id="dashboard-commitment-title">Commitment</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <div class="split-metrics single-column">
+          <div><span class="muted">Amount</span><strong id="dashboard-commitment-amount">RM0</strong></div>
+          <div><span class="muted">Due Date</span><strong id="dashboard-commitment-due">-</strong></div>
+          <div><span class="muted">Status</span><strong id="dashboard-commitment-status">Unpaid</strong></div>
+        </div>
+        <p id="dashboard-commitment-notes" class="muted">No notes</p>
+        <button id="dashboard-commitment-toggle" class="primary-button" type="button">Mark Paid</button>
+      </div>
+    </dialog>
+
+    <dialog id="goal-modal" class="app-modal">
+      <form id="goal-form" method="dialog" class="modal-card">
+        <div class="section-head compact-head">
+          <h3 id="goal-modal-title">Add Goal</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <input type="hidden" id="goal-id">
+        <input type="hidden" id="goal-private">
+        <label>Goal Name<input id="goal-name" type="text" required></label>
+        <label>Target Amount<input id="goal-target" type="number" min="0" step="0.01" required></label>
+        <label>Current Amount<input id="goal-current" type="number" min="0" step="0.01" required></label>
+        <button class="primary-button" type="submit">Save goal</button>
+      </form>
+    </dialog>
+
+    <dialog id="transaction-modal" class="app-modal">
+      <form id="transaction-form" method="dialog" class="modal-card">
+        <div class="section-head compact-head">
+          <h3 id="transaction-modal-title">Savings Transaction</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <input type="hidden" id="transaction-goal-id">
+        <input type="hidden" id="transaction-type">
+        <label>Amount<input id="transaction-amount" type="number" min="0.01" step="0.01" required></label>
+        <label>Notes<textarea id="transaction-notes" rows="3"></textarea></label>
+        <button class="primary-button" type="submit">Save transaction</button>
+      </form>
+    </dialog>
+
+    <dialog id="vault-pin-modal" class="app-modal">
+      <form id="vault-pin-form" method="dialog" class="modal-card">
+        <div class="section-head compact-head">
+          <h3>Private Vault</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <p class="muted">Enter PIN to unlock hidden goals.</p>
+        <label>PIN<input id="vault-pin-input" type="password" inputmode="numeric" maxlength="12" required></label>
+        <button class="primary-button" type="submit">Unlock</button>
+      </form>
+    </dialog>
+
+    <dialog id="password-recovery-modal" class="app-modal">
+      <form id="password-recovery-form" method="dialog" class="modal-card">
+        <div class="section-head compact-head">
+          <h3>Set New Password</h3>
+          <button class="icon-button" data-close-modal type="button">✕</button>
+        </div>
+        <p class="muted">Finish reset with new password.</p>
+        <label>New Password<input id="recovery-password" type="password" minlength="6" required></label>
+        <button class="primary-button" type="submit">Update password</button>
+      </form>
+    </dialog>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
+
+
