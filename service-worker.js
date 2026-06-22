@@ -1,4 +1,4 @@
-const CACHE_NAME = "commitment-tracker-v1";
+﻿const CACHE_NAME = "commitment-tracker-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -29,23 +29,42 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  const requestUrl = new URL(event.request.url);
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          return response;
+        })
+        .catch(async () => (await caches.match("./index.html")) || caches.match("./offline.html"))
+    );
+    return;
+  }
+
+  if (isSameOrigin) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(async () => (await caches.match(event.request)) || new Response("", { status: 503, statusText: "Offline" }))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
 
-      return fetch(event.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== "basic") return response;
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(async () => {
-          if (event.request.mode === "navigate") {
-            return caches.match("./offline.html");
-          }
-          return new Response("", { status: 503, statusText: "Offline" });
-        });
+      return fetch(event.request).catch(() => new Response("", { status: 503, statusText: "Offline" }));
     })
   );
 });
