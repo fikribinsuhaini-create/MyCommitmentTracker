@@ -176,7 +176,12 @@ function renderDashboard() {
   document.getElementById("snapshot-balance").textContent = money(metrics.balance);
 
   const dashboardList = document.getElementById("dashboard-commitments-list");
-  const sorted = [...state.commitments].sort((a, b) => Number(a.due_date) - Number(b.due_date));
+  const sorted = [...state.commitments].sort((a, b) => {
+    const aPaid = Boolean(paidMap.get(a.id));
+    const bPaid = Boolean(paidMap.get(b.id));
+    if (aPaid !== bPaid) return aPaid - bPaid;
+    return Number(a.due_date) - Number(b.due_date);
+  });
   dashboardList.innerHTML = sorted.length
     ? sorted.map((item) => {
         const isPaid = Boolean(paidMap.get(item.id));
