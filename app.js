@@ -16,7 +16,8 @@ const state = {
   page: "dashboard",
   deferredPrompt: null,
   vaultUnlocked: false,
-  vaultTouchedAt: 0
+  vaultTouchedAt: 0,
+  progressFocusMonth: null
 };
 
 const supabase = configReady
@@ -69,6 +70,7 @@ function setPage(page) {
   const pageTitles = { dashboard: "Dashboard", commitments: "Bills", savings: "Savings", progress: "Progress", settings: "Settings" };
   nodes.pageTitle.textContent = pageTitles[page] || (page.charAt(0).toUpperCase() + page.slice(1));
   if (page !== "savings") lockVault();
+  if (page === "progress" && state.snapshots.length) renderProgress();
 }
 
 function getPaidMapForMonth(month) {
@@ -178,6 +180,32 @@ function renderDashboard() {
   document.getElementById("snapshot-commitments").textContent = money(metrics.totalBills);
   document.getElementById("snapshot-savings").textContent = money(metrics.totalSavings);
   document.getElementById("snapshot-balance").textContent = money(metrics.balance);
+
+  const carryForwardCard = document.getElementById("carry-forward-card");
+  const previousCarry = [...state.snapshots]
+    .filter((snapshot) => snapshot.month < currentMonth())
+    .map((snapshot) => {
+      const breakdown = snapshot.commitment_breakdown || [];
+      const monthPaidMap = getPaidMapForMonth(snapshot.month);
+      const unpaidItems = breakdown.filter((commitment) => {
+        const commitmentId = commitment.commitment_id || state.commitments.find((entry) => entry.name === commitment.name)?.id;
+        return typeof commitment.is_paid === "boolean" ? !commitment.is_paid : !(commitmentId && monthPaidMap.get(commitmentId));
+      });
+      const unpaidAmount = unpaidItems.reduce((sum, commitment) => sum + Number(commitment.amount || 0), 0);
+      return { ...snapshot, unpaidItems, unpaidAmount };
+    })
+    .find((snapshot) => snapshot.unpaidItems.length > 0);
+
+  if (previousCarry) {
+    carryForwardCard.classList.remove("hidden");
+    carryForwardCard.dataset.month = previousCarry.month;
+    document.getElementById("carry-forward-month").textContent = monthLabel(previousCarry.month);
+    document.getElementById("carry-forward-count").textContent = previousCarry.unpaidItems.length;
+    document.getElementById("carry-forward-amount").textContent = money(previousCarry.unpaidAmount);
+  } else {
+    carryForwardCard.classList.add("hidden");
+    carryForwardCard.dataset.month = "";
+  }
 
   const dashboardList = document.getElementById("dashboard-commitments-list");
   const sorted = [...state.commitments].sort((a, b) => {
@@ -315,6 +343,7 @@ function renderProgress() {
   document.getElementById("snapshots-list").innerHTML = sorted.length
     ? sorted.map((item) => {
         const monthPaidMap = getPaidMapForMonth(item.month);
+        const isFocused = state.progressFocusMonth === item.month;
         const expandedBreakdown = (item.commitment_breakdown || []).map((commitment) => {
           const commitmentId = commitment.commitment_id || state.commitments.find((entry) => entry.name === commitment.name)?.id;
           const isPaid = typeof commitment.is_paid === "boolean"
@@ -341,7 +370,7 @@ function renderProgress() {
               </div>
               <button class="ghost-button compact" data-action="toggle-snapshot" data-id="${item.id}" type="button">View Details</button>
             </div>
-            <div class="snapshot-details hidden" id="snapshot-${item.id}">
+            <div class="snapshot-details ${isFocused ? "" : "hidden"}" id="snapshot-${item.id}">
               <div class="split-metrics">
                 <div><span class="muted">Salary</span><strong>${money(item.salary)}</strong></div>
                 <div><span class="muted">Bills</span><strong>${money(item.total_commitments)}</strong></div>
@@ -365,6 +394,8 @@ function renderProgress() {
         `;
       }).join("")
     : `<article class="card-item"><p class="muted">Snapshots appear after first sync.</p></article>`;
+
+  state.progressFocusMonth = null;
 
   drawLineChart("savings-chart", sorted.slice().reverse().map((item) => Number(item.total_savings || 0)), "#22c383");
   drawLineChart("balance-chart", sorted.slice().reverse().map((item) => Number(item.balance || 0)), "#72e4b5");
@@ -885,6 +916,12 @@ function setupEvents() {
 
   document.querySelectorAll("[data-page-target]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.pageTarget)));
   document.getElementById("snapshot-card").addEventListener("click", () => setPage("progress"));
+  document.getElementById("carry-forward-card").addEventListener("click", () => {
+    const month = document.getElementById("carry-forward-card").dataset.month;
+    if (!month) return;
+    state.progressFocusMonth = month;
+    setPage("progress");
+  });
   document.getElementById("dashboard-commitments-trigger").addEventListener("click", () => openModal("dashboard-commitments-modal"));
   document.getElementById("dashboard-commitment-toggle").addEventListener("click", async (event) => {
     try {
