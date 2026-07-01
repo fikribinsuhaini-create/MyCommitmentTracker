@@ -71,11 +71,15 @@ function setPage(page) {
   if (page !== "savings") lockVault();
 }
 
+function getPaidMapForMonth(month) {
+  return new Map(
+    state.payments.filter((item) => item.month === month).map((item) => [item.commitment_id, item.is_paid])
+  );
+}
+
 function todayMonthMetrics() {
   const publicGoals = state.goals.filter((goal) => !goal.is_private);
-  const paidMap = new Map(
-    state.payments.filter((item) => item.month === currentMonth()).map((item) => [item.commitment_id, item.is_paid])
-  );
+  const paidMap = getPaidMapForMonth(currentMonth());
   const salary = Number(state.profile?.monthly_salary || 0);
   const totalBills = state.commitments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalSavings = publicGoals.reduce((sum, item) => sum + Number(item.current_amount || 0), 0);
@@ -307,16 +311,24 @@ function renderGoalCards(goals, isPrivate) {
 
 function renderProgress() {
   const sorted = [...state.snapshots].sort((a, b) => a.month < b.month ? 1 : -1);
-  const commitmentsByMonth = new Map();
-  state.commitments.forEach((item) => {
-    const arr = commitmentsByMonth.get(currentMonth()) || [];
-    arr.push(item);
-    commitmentsByMonth.set(currentMonth(), arr);
-  });
 
   document.getElementById("snapshots-list").innerHTML = sorted.length
     ? sorted.map((item) => {
-        const expandedBreakdown = (item.commitment_breakdown || []).map((commitment) => `<div class="history-row"><span>${commitment.name}</span><strong>${money(commitment.amount)}</strong></div>`).join("");
+        const monthPaidMap = getPaidMapForMonth(item.month);
+        const expandedBreakdown = (item.commitment_breakdown || []).map((commitment) => {
+          const commitmentId = commitment.commitment_id || state.commitments.find((entry) => entry.name === commitment.name)?.id;
+          const isPaid = typeof commitment.is_paid === "boolean"
+            ? commitment.is_paid
+            : Boolean(commitmentId && monthPaidMap.get(commitmentId));
+          return `<div class="history-row"><span>${commitment.name} <small class="inline-status ${isPaid ? "paid-text" : "unpaid-text"}">${isPaid ? "Paid" : "Unpaid"}</small></span><strong>${money(commitment.amount)}</strong></div>`;
+        }).join("");
+        const paidCount = (item.commitment_breakdown || []).filter((commitment) => {
+          const commitmentId = commitment.commitment_id || state.commitments.find((entry) => entry.name === commitment.name)?.id;
+          return typeof commitment.is_paid === "boolean"
+            ? commitment.is_paid
+            : Boolean(commitmentId && monthPaidMap.get(commitmentId));
+        }).length;
+        const unpaidCount = Math.max(0, (item.commitment_breakdown || []).length - paidCount);
         const savingsBreakdown = (item.savings_breakdown || []).map((goal) => `<div class="history-row"><span>${goal.name}</span><strong>${money(goal.current_amount)}</strong></div>`).join("");
         return `
           <article class="card-item snapshot-month-card">
@@ -332,6 +344,10 @@ function renderProgress() {
                 <div><span class="muted">Salary</span><strong>${money(item.salary)}</strong></div>
                 <div><span class="muted">Bills</span><strong>${money(item.total_commitments)}</strong></div>
                 <div><span class="muted">Savings</span><strong>${money(item.total_savings)}</strong></div>
+              </div>
+              <div class="metric-grid small snapshot-status-grid">
+                <article class="mini-card"><span>Paid Bills</span><strong>${paidCount}</strong></article>
+                <article class="mini-card"><span>Unpaid Bills</span><strong>${unpaidCount}</strong></article>
               </div>
               <div class="subtle-divider"></div>
               <div class="history-list">
@@ -408,7 +424,7 @@ async function ensureProfile(userId) {
 async function loadData() {
   const [commitments, payments, goals, transactions, snapshots] = await Promise.all([
     supabase.from("commitments").select("*").order("due_date"),
-    supabase.from("commitment_payments").select("*").eq("month", currentMonth()),
+    supabase.from("commitment_payments").select("*"),
     supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
     supabase.from("savings_transactions").select("*").order("created_at", { ascending: false }),
     supabase.from("monthly_snapshots").select("*").order("month", { ascending: false })
@@ -427,17 +443,21 @@ async function loadData() {
 
 async function syncSnapshot() {
   const metrics = todayMonthMetrics();
+  const month = currentMonth();
+  const paidMap = getPaidMapForMonth(month);
   const payload = {
     user_id: state.user.id,
-    month: currentMonth(),
+    month,
     salary: metrics.salary,
     total_commitments: metrics.totalBills,
     total_savings: metrics.totalSavings,
     balance: metrics.balance,
     commitment_breakdown: state.commitments.map((item) => ({
+      commitment_id: item.id,
       name: item.name,
       amount: Number(item.amount || 0),
-      due_date: item.due_date
+      due_date: item.due_date,
+      is_paid: Boolean(paidMap.get(item.id))
     })),
     savings_breakdown: state.goals
       .filter((goal) => !goal.is_private)
