@@ -291,6 +291,22 @@
       </div>
     </dialog>
 
+    <dialog id="progress-bill-modal" class="app-modal">
+      <div class="modal-card">
+        <div class="section-head compact-head">
+          <h3 id="progress-bill-title">Bill</h3>
+          <button class="icon-button" data-close-modal type="button">&times;</button>
+        </div>
+        <div class="split-metrics single-column">
+          <div><span class="muted">Month</span><strong id="progress-bill-month">-</strong></div>
+          <div><span class="muted">Amount</span><strong id="progress-bill-amount">RM0</strong></div>
+          <div><span class="muted">Due Date</span><strong id="progress-bill-due">-</strong></div>
+          <div><span class="muted">Status</span><strong id="progress-bill-status">Unpaid</strong></div>
+        </div>
+        <button id="progress-bill-toggle" class="primary-button" type="button">Mark Paid</button>
+      </div>
+    </dialog>
+
     <dialog id="goal-modal" class="app-modal">
       <form id="goal-form" method="dialog" class="modal-card">
         <div class="section-head compact-head">

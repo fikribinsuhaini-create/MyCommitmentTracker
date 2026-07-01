@@ -113,6 +113,8 @@ h1, h2, h3, p { margin: 0; }
 .dashboard-commitment-card { width: 100%; text-align: left; cursor: pointer; }
 .dashboard-section-head { margin: 10px 0 14px; }
 .card-top, .card-actions, .row, .summary-row, .history-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.progress-bill-row { width: 100%; padding: 0; background: transparent; border: 0; color: inherit; text-align: left; }
+.progress-bill-row span { min-width: 0; }
 .tag {
   display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 999px;
   font-size: 0.82rem; background: rgba(255,255,255,0.06); color: var(--muted);

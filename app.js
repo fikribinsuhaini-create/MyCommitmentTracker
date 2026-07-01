@@ -320,7 +320,9 @@ function renderProgress() {
           const isPaid = typeof commitment.is_paid === "boolean"
             ? commitment.is_paid
             : Boolean(commitmentId && monthPaidMap.get(commitmentId));
-          return `<div class="history-row"><span>${commitment.name} <small class="inline-status ${isPaid ? "paid-text" : "unpaid-text"}">${isPaid ? "Paid" : "Unpaid"}</small></span><strong>${money(commitment.amount)}</strong></div>`;
+          const actionAttr = commitmentId ? `data-action="open-progress-bill" data-id="${commitmentId}" data-month="${item.month}" data-name="${commitment.name}" data-amount="${Number(commitment.amount || 0)}" data-due-date="${commitment.due_date}" data-is-paid="${isPaid}"` : "";
+          const tag = commitmentId ? "button" : "div";
+          return `<${tag} class="history-row progress-bill-row" ${actionAttr} type="button"><span>${commitment.name} <small class="inline-status ${isPaid ? "paid-text" : "unpaid-text"}">${isPaid ? "Paid" : "Unpaid"}</small></span><strong>${money(commitment.amount)}</strong></${tag}>`;
         }).join("");
         const paidCount = (item.commitment_breakdown || []).filter((commitment) => {
           const commitmentId = commitment.commitment_id || state.commitments.find((entry) => entry.name === commitment.name)?.id;
@@ -601,18 +603,22 @@ async function refreshApp(message) {
   if (message) showToast(message);
 }
 
-async function toggleBillPaid(id) {
-  const found = state.payments.find((item) => item.commitment_id === id && item.month === currentMonth());
+async function toggleBillPaidForMonth(id, month) {
+  const found = state.payments.find((item) => item.commitment_id === id && item.month === month);
   const payload = {
     user_id: state.user.id,
     commitment_id: id,
-    month: currentMonth(),
+    month,
     is_paid: !found?.is_paid,
     paid_at: !found?.is_paid ? new Date().toISOString() : null
   };
   const { error } = await supabase.from("commitment_payments").upsert(payload, { onConflict: "user_id,commitment_id,month" });
   if (error) throw error;
   await refreshApp("Payment status updated");
+}
+
+async function toggleBillPaid(id) {
+  await toggleBillPaidForMonth(id, currentMonth());
 }
 
 function fillBillForm(item) {
@@ -656,6 +662,21 @@ function fillDashboardBillModal(item) {
   toggleButton.dataset.id = item.id;
   toggleButton.textContent = isPaid ? "✓ Mark Unpaid" : "✓ Mark Paid";
   openModal("dashboard-commitment-modal");
+}
+
+function fillProgressBillModal(commitmentId, month, details) {
+  const payment = state.payments.find((entry) => entry.commitment_id === commitmentId && entry.month === month);
+  const isPaid = typeof details.is_paid === "boolean" ? details.is_paid : Boolean(payment?.is_paid);
+  document.getElementById("progress-bill-title").textContent = details.name;
+  document.getElementById("progress-bill-month").textContent = monthLabel(month);
+  document.getElementById("progress-bill-amount").textContent = money(details.amount);
+  document.getElementById("progress-bill-due").textContent = `${details.due_date}${suffix(details.due_date)}`;
+  document.getElementById("progress-bill-status").textContent = isPaid ? "Paid" : "Unpaid";
+  const toggleButton = document.getElementById("progress-bill-toggle");
+  toggleButton.dataset.id = commitmentId;
+  toggleButton.dataset.month = month;
+  toggleButton.textContent = isPaid ? "✓ Mark Unpaid" : "✓ Mark Paid";
+  openModal("progress-bill-modal");
 }
 
 async function deleteRow(table, id, label) {
@@ -736,6 +757,14 @@ async function handleAction(event) {
     if (action === "open-dashboard-commitment") {
       fillDashboardBillModal(state.commitments.find((item) => item.id === id));
       closeModal("dashboard-commitments-modal");
+    }
+    if (action === "open-progress-bill") {
+      fillProgressBillModal(id, button.dataset.month, {
+        name: button.dataset.name,
+        amount: Number(button.dataset.amount || 0),
+        due_date: Number(button.dataset.dueDate || 0),
+        is_paid: button.dataset.isPaid === "true"
+      });
     }
     if (action === "edit-commitment") fillBillForm(state.commitments.find((item) => item.id === id));
     if (action === "delete-commitment") await deleteRow("commitments", id, "Bill");
@@ -861,6 +890,14 @@ function setupEvents() {
     try {
       await toggleBillPaid(event.currentTarget.dataset.id);
       closeModal("dashboard-commitment-modal");
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+  document.getElementById("progress-bill-toggle").addEventListener("click", async (event) => {
+    try {
+      await toggleBillPaidForMonth(event.currentTarget.dataset.id, event.currentTarget.dataset.month);
+      closeModal("progress-bill-modal");
     } catch (error) {
       showToast(error.message);
     }
