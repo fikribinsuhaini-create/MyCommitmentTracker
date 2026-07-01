@@ -107,6 +107,18 @@ h1, h2, h3, p { margin: 0; }
 .snapshot-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; color: var(--muted); }
 .carry-forward-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; color: var(--muted); }
 .carry-forward-grid strong { display: block; margin-top: 4px; color: var(--text); }
+.overdue-card {
+  background: linear-gradient(180deg, rgba(140, 38, 38, 0.28), rgba(91, 24, 24, 0.18));
+  border: 1px solid rgba(255, 122, 122, 0.28);
+  box-shadow: 0 16px 42px rgba(71, 16, 16, 0.28);
+}
+.overdue-eyebrow {
+  color: #ffb4a8;
+}
+.overdue-link {
+  color: #ffd3b0;
+  font-weight: 700;
+}
 .snapshot-grid strong { display: block; margin-top: 4px; color: var(--text); }
 
 .toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 16px 0; }
